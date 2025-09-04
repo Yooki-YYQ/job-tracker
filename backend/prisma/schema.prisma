@@ -22,3 +22,28 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
+enum ApplicationStatus {
+  APPLIED
+  INTERVIEW_SCHEDULED
+  INTERVIEWED
+  OFFER_RECEIVED
+  REJECTED
+  WITHDRAWN
+  ACCEPTED
+}
+
+model Application {
+  id              String             @id @default(uuid())
+  companyName     String
+  positionTitle   String
+  jobUrl          String?            // Optional: Some job links will be closed
+  applicationDate DateTime           @default(now())
+  status          ApplicationStatus  @default(APPLIED)
+  notes           String?            @db.Text
+
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([status])
+  @@index([applicationDate])
+}
