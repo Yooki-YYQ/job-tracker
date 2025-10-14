@@ -3,9 +3,10 @@ import React from 'react';
 interface TableToolbarProps {
   onAddRecord: () => void;
   onRefresh: () => void;
+  onAISettings: () => void;
 }
 
-export default function TableToolbar({ onAddRecord, onRefresh }: TableToolbarProps) {
+export default function TableToolbar({ onAddRecord, onRefresh, onAISettings }: TableToolbarProps) {
   return (
     <div style={{ 
       padding: '16px 16px 0 16px',
@@ -27,7 +28,7 @@ export default function TableToolbar({ onAddRecord, onRefresh }: TableToolbarPro
         </h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button 
-            onClick={onRefresh}
+            onClick={onAISettings}
             style={{ 
               padding: '6px 12px', 
               background: '#f8f9fa', 
@@ -41,7 +42,7 @@ export default function TableToolbar({ onAddRecord, onRefresh }: TableToolbarPro
               color: '#6c757d'
             }}
           >
-            <span>📊</span> Table
+            <span>⚙️</span> AI Settings
           </button>
           <button 
             onClick={onAddRecord}

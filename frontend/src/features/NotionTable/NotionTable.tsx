@@ -9,6 +9,7 @@ import {
   ApplicationDetailModal, 
   ColumnManagerModal 
 } from './modals';
+import { AISettings } from '@/shared/components';
 import type { JobSubmissionForm, ParsedJobData, Application } from '@/types';
 
 export default function NotionTable() {
@@ -28,7 +29,9 @@ export default function NotionTable() {
   const [isSubmissionModalOpen, setIsSubmissionModalOpen] = useState(false);
   const [isAIConfirmationModalOpen, setIsAIConfirmationModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
   const [isColumnManagerModalOpen, setIsColumnManagerModalOpen] = useState(false);
+  const [isAISettingsModalOpen, setIsAISettingsModalOpen] = useState(false);
   const [submissionData, setSubmissionData] = useState<JobSubmissionForm | null>(null);
 
   const handleRowClick = (record: Application) => {
@@ -42,6 +45,10 @@ export default function NotionTable() {
 
   const handleAddProperty = () => {
     setIsColumnManagerModalOpen(true);
+  };
+
+  const handleAISettings = () => {
+    setIsAISettingsModalOpen(true);
   };
 
   const handleJobSubmission = async (data: JobSubmissionForm) => {
@@ -67,12 +74,15 @@ export default function NotionTable() {
       <TableToolbar 
         onAddRecord={handleAddRecord}
         onRefresh={refreshApplications}
+        onAISettings={handleAISettings}
       />
       <TableGrid
         data={applications}
         columns={columns}
         loading={loading}
         onRowClick={handleRowClick}
+        pagination={pagination}
+        onPaginationChange={setPagination}
       />
       <AddPropertyButton onAddProperty={handleAddProperty} />
       
@@ -109,6 +119,11 @@ export default function NotionTable() {
         onAddColumn={addColumn}
         onUpdateColumn={updateColumn}
         onRemoveColumn={removeColumn}
+      />
+      
+      <AISettings
+        open={isAISettingsModalOpen}
+        onClose={() => setIsAISettingsModalOpen(false)}
       />
     </div>
   );

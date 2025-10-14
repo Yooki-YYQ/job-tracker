@@ -3,7 +3,9 @@ import type { ColumnDefinition } from '@/types';
 import { DEFAULT_COLUMNS } from '@/types';
 
 export function useColumns() {
-  const [columns, setColumns] = useState<ColumnDefinition[]>(DEFAULT_COLUMNS);
+  // Filter out ID column from display (keep in data for internal operations)
+  const visibleColumns = DEFAULT_COLUMNS.filter(col => col.id !== 'id');
+  const [columns, setColumns] = useState<ColumnDefinition[]>(visibleColumns);
   
   const addColumn = useCallback((column: ColumnDefinition) => {
     setColumns(prev => [...prev, column]);
@@ -29,8 +31,8 @@ export function useColumns() {
   }, []);
 
   const resetColumns = useCallback(() => {
-    setColumns(DEFAULT_COLUMNS);
-  }, []);
+    setColumns(visibleColumns);
+  }, [visibleColumns]);
 
   const getColumnById = useCallback((id: string): ColumnDefinition | undefined => {
     return columns.find(col => col.id === id);

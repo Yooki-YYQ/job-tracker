@@ -8,13 +8,17 @@ interface TableGridProps {
   columns: ColumnDefinition[];
   loading: boolean;
   onRowClick?: (record: Application) => void;
+  pagination?: { current: number; pageSize: number };
+  onPaginationChange?: (pagination: { current: number; pageSize: number }) => void;
 }
 
 export default function TableGrid({
   data,
   columns,
   loading,
-  onRowClick
+  onRowClick,
+  pagination = { current: 1, pageSize: 10 },
+  onPaginationChange
 }: TableGridProps) {
   const antColumns: ColumnsType<Application> = [
     {
@@ -22,7 +26,12 @@ export default function TableGrid({
       key: 'rowNumber',
       width: 60,
       fixed: 'left',
-      render: (_, __, index) => index + 1  // Auto-recalculates on delete
+      render: (_, __, index) => {
+        // Calculate row number based on pagination
+        const current = pagination.current || 1;
+        const pageSize = pagination.pageSize || 10;
+        return (current - 1) * pageSize + index + 1;
+      }
     },
     ...columns.map(col => ({
     title: col.name,
@@ -107,7 +116,18 @@ export default function TableGrid({
           style: { cursor: 'pointer' }
         })}
         scroll={{ x: 'max-content' }}
-        pagination={{ pageSize: 10, showSizeChanger: true }}
+        pagination={{
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          showSizeChanger: true,
+          pageSizeOptions: ['10', '20', '50', '100'],
+          onChange: (page, size) => {
+            onPaginationChange?.({ current: page, pageSize: size || 10 });
+          },
+          onShowSizeChange: (current, size) => {
+            onPaginationChange?.({ current: 1, pageSize: size });
+          }
+        }}
         size="small"
       />
     </div>
