@@ -1,0 +1,60 @@
+/* Global styles for the application */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #ffffff;
+  color: #212529;
+  line-height: 1.5;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Job Tracker specific styles */
+.job-tracker-page {
+  min-height: 100vh;
+  background: white;
+}
+
+.notion-table {
+  min-height: 100vh;
+  background: white;
+}
+
+/* AG Grid customizations */
+.ag-theme-alpine {
+  --ag-header-background-color: #f8f9fa;
+  --ag-header-foreground-color: #6c757d;
+  --ag-border-color: #e9ecef;
+  --ag-row-hover-color: #f8f9fa;
+  --ag-selected-row-background-color: #e6f7ff;
+}
+
+/* Utility classes */
+.text-muted {
+  color: #6c757d;
+}
+
+.text-primary {
+  color: #1890ff;
+}
+
+.text-success {
+  color: #52c41a;
+}
+
+.text-warning {
+  color: #faad14;
+}
+
+.text-danger {
+  color: #ff4d4f;
+}
