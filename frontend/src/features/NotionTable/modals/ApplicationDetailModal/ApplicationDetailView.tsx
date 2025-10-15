@@ -7,11 +7,15 @@ const { Title, Paragraph } = Typography;
 interface ApplicationDetailViewProps {
   application: Application;
   onClose: () => void;
+  onEdit?: (application: Application) => void;
+  onDelete?: (application: Application) => void;
 }
 
 export default function ApplicationDetailView({ 
   application, 
-  onClose 
+  onClose,
+  onEdit,
+  onDelete
 }: ApplicationDetailViewProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -48,10 +52,17 @@ export default function ApplicationDetailView({
           {application.positionTitle}
         </Title>
         <Space>
-          <Button icon={<EditOutlined />}>
+          <Button 
+            icon={<EditOutlined />}
+            onClick={() => onEdit?.(application)}
+          >
             Edit
           </Button>
-          <Button danger icon={<DeleteOutlined />}>
+          <Button 
+            danger 
+            icon={<DeleteOutlined />}
+            onClick={() => onDelete?.(application)}
+          >
             Delete
           </Button>
         </Space>

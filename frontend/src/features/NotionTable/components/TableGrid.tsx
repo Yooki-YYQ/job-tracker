@@ -1,5 +1,6 @@
 import React from 'react';
-import { Table } from 'antd';
+import { Table, Button } from 'antd';
+import { DownloadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { Application, ColumnDefinition } from '@/types';
 
@@ -75,14 +76,68 @@ export default function TableGrid({
           return <span style={{ color: '#6c757d' }}>{truncated}</span>;
         }
         
+        // Add date formatting for applicationDate field
+        if (col.id === 'data.applicationDate') {
+          if (!value) return '-';
+          try {
+            const date = new Date(value);
+            return date.toLocaleDateString('en-US', { 
+              year: 'numeric', 
+              month: '2-digit', 
+              day: '2-digit' 
+            });
+          } catch {
+            return value; // fallback to raw value if date parsing fails
+          }
+        }
+        
         return value || '-';
       }
       
       // Handle file fields
       if (col.id.startsWith('files.')) {
+        const files = record.files || [];
+        
+        if (col.id === 'files.cv') {
+          const cvFile = files.find(f => f.fileName.toLowerCase().includes('cv') || f.fileName.toLowerCase().includes('resume'));
+          if (!cvFile) return <span style={{ color: '#6c757d' }}>No files</span>;
+          
+          return (
+            <Button 
+              size="small" 
+              icon={<DownloadOutlined />}
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(`http://localhost:5000/api/files/${cvFile.id}/download`, '_blank');
+              }}
+            >
+              {cvFile.fileName}
+            </Button>
+          );
+        }
+        
+        if (col.id === 'files.cl') {
+          const clFile = files.find(f => f.fileName.toLowerCase().includes('cover'));
+          if (!clFile) return <span style={{ color: '#6c757d' }}>No files</span>;
+          
+          return (
+            <Button 
+              size="small" 
+              icon={<DownloadOutlined />}
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(`http://localhost:5000/api/files/${clFile.id}/download`, '_blank');
+              }}
+            >
+              {clFile.fileName}
+            </Button>
+          );
+        }
+        
+        // Fallback for other file fields
         const field = col.id.replace('files.', '');
-        const file = record.files?.[0];
-        if (!file) return 'No files';
+        const file = files[0];
+        if (!file) return <span style={{ color: '#6c757d' }}>No files</span>;
         return file[field as keyof typeof file] || '-';
       }
       
@@ -98,7 +153,26 @@ export default function TableGrid({
       
       return record[col.id as keyof Application] || '-';
     }
-  }))
+  })),
+  {
+    title: 'Actions',
+    key: 'actions',
+    width: 80,
+    fixed: 'right',
+    render: (_, record) => (
+      <Button 
+        size="small" 
+        danger
+        onClick={(e) => {
+          e.stopPropagation();
+          // TODO: Add delete confirmation and handler
+          console.log('Delete application:', record.id);
+        }}
+      >
+        Delete
+      </Button>
+    )
+  }
   ];
 
   return (

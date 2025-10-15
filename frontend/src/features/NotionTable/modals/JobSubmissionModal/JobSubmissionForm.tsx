@@ -19,7 +19,7 @@ export default function JobSubmissionForm({
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [uploading, setUploading] = useState(false);
 
-  const handleFileChange = ({ fileList: newFileList }: { fileList: UploadFile[] }) => {
+  const handleFileChange = ({ fileList: newFileList }: { fileList: UploadFile[] }, fileType?: string) => {
     setFileList(newFileList);
   };
 
@@ -43,10 +43,7 @@ export default function JobSubmissionForm({
   };
 
   const handleSubmit = async (values: JobSubmissionForm) => {
-    if (fileList.length === 0) {
-      message.warning('Please upload at least one file (resume, cover letter, etc.)');
-      return;
-    }
+    // Files are now optional - no validation required
 
     const uploadedFiles: UploadedFile[] = fileList.map(file => ({
       id: file.uid,
@@ -86,10 +83,7 @@ export default function JobSubmissionForm({
 
       <Form.Item
         name="jobDescription"
-        label="Job Description"
-        rules={[
-          { required: true, message: 'Please paste the complete job description' }
-        ]}
+        label="Job Description (Optional)"
       >
         <Input.TextArea
           rows={8}
@@ -98,30 +92,32 @@ export default function JobSubmissionForm({
         />
       </Form.Item>
 
-      <Form.Item
-        label="Upload Files"
-        required
-        help="Upload your resume, cover letter, and other relevant documents"
-      >
+      <Form.Item label="CV / Resume (Optional)">
         <Upload
-          fileList={fileList}
-          onChange={handleFileChange}
-          beforeUpload={beforeUpload}
-          multiple
+          fileList={fileList.filter(f => f.name?.toLowerCase().includes('cv') || f.name?.toLowerCase().includes('resume'))}
+          onChange={(info) => handleFileChange(info, 'cv')}
+          beforeUpload={() => false}
+          maxCount={1}
           listType="text"
         >
-          <Button icon={<UploadOutlined />} disabled={uploading}>
-            {uploading ? 'Uploading...' : 'Select Files'}
+          <Button icon={<UploadOutlined />}>
+            Upload CV
           </Button>
         </Upload>
-        
-        {uploading && (
-          <Progress
-            percent={100}
-            status="active"
-            style={{ marginTop: 8 }}
-          />
-        )}
+      </Form.Item>
+
+      <Form.Item label="Cover Letter (Optional)">
+        <Upload
+          fileList={fileList.filter(f => f.name?.toLowerCase().includes('cover'))}
+          onChange={(info) => handleFileChange(info, 'cl')}
+          beforeUpload={() => false}
+          maxCount={1}
+          listType="text"
+        >
+          <Button icon={<UploadOutlined />}>
+            Upload CL
+          </Button>
+        </Upload>
       </Form.Item>
 
       <div style={{ 

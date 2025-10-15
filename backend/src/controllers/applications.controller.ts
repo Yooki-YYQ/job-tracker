@@ -7,6 +7,7 @@ const prisma = new PrismaClient();
 export async function getApplications(req: Request, res: Response) {
   try {
     let applications = await prisma.application.findMany({
+      where: { isDeleted: false }, // Add soft delete filter
       include: {
         _count: {
           select: { files: true }
@@ -196,13 +197,36 @@ export async function deleteApplication(req: Request, res: Response) {
   try {
     const { id } = req.params;
     
-    await prisma.application.delete({
-      where: { id }
+    await prisma.application.update({
+      where: { id },
+      data: { 
+        isDeleted: true,
+        deletedAt: new Date()
+      }
     });
     
     res.json({ message: "Application deleted successfully" });
   } catch (error) {
     console.error("Delete application error:", error);
     res.status(500).json({ error: "Failed to delete application" });
+  }
+}
+
+export async function restoreApplication(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    
+    await prisma.application.update({
+      where: { id },
+      data: { 
+        isDeleted: false,
+        deletedAt: null
+      }
+    });
+    
+    res.json({ message: "Application restored successfully" });
+  } catch (error) {
+    console.error("Restore application error:", error);
+    res.status(500).json({ error: "Failed to restore application" });
   }
 }

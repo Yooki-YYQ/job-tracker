@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { message } from 'antd';
 import { useApplications } from './hooks/useApplications';
 import { useColumns } from './hooks/useColumns';
 // Removed useTableGrid import - using Ant Design Table directly
@@ -7,9 +8,11 @@ import {
   JobSubmissionModal, 
   AIConfirmationModal, 
   ApplicationDetailModal, 
-  ColumnManagerModal 
+  ColumnManagerModal,
+  EditApplicationModal
 } from './modals';
 import { AISettings } from '@/shared/components';
+import { applicationApi } from '@/services/api';
 import type { JobSubmissionForm, ParsedJobData, Application } from '@/types';
 
 export default function NotionTable() {
@@ -32,7 +35,10 @@ export default function NotionTable() {
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
   const [isColumnManagerModalOpen, setIsColumnManagerModalOpen] = useState(false);
   const [isAISettingsModalOpen, setIsAISettingsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingApplication, setEditingApplication] = useState<Application | null>(null);
   const [submissionData, setSubmissionData] = useState<JobSubmissionForm | null>(null);
+  const [deletedAppId, setDeletedAppId] = useState<string | null>(null);
 
   const handleRowClick = (record: Application) => {
     setSelectedAppId(record.id);
@@ -49,6 +55,73 @@ export default function NotionTable() {
 
   const handleAISettings = () => {
     setIsAISettingsModalOpen(true);
+  };
+
+  const handleEditApplication = (application: Application) => {
+    setEditingApplication(application);
+    setIsEditModalOpen(true);
+    setIsDetailModalOpen(false);
+  };
+
+  const handleDeleteApplication = async (application: Application) => {
+    if (window.confirm('Are you sure you want to delete this application?')) {
+      try {
+        await deleteApplication(application.id);
+        setDeletedAppId(application.id);
+        refreshApplications();
+        setIsDetailModalOpen(false);
+        
+        // Show undo message
+        message.success({
+          content: 'Application deleted',
+          duration: 30,
+          action: (
+            <button 
+              onClick={handleUndoDelete}
+              style={{ 
+                background: 'transparent', 
+                border: 'none', 
+                color: '#1890ff', 
+                cursor: 'pointer',
+                textDecoration: 'underline'
+              }}
+            >
+              Undo
+            </button>
+          )
+        });
+      } catch (error) {
+        console.error('Failed to delete application:', error);
+      }
+    }
+  };
+
+  const handleUndoDelete = async () => {
+    if (!deletedAppId) return;
+    
+    try {
+      await applicationApi.restore(deletedAppId);
+      setDeletedAppId(null);
+      refreshApplications();
+      message.success('Application restored');
+    } catch (error) {
+      console.error('Failed to restore application:', error);
+      message.error('Failed to restore application');
+    }
+  };
+
+  const handleSaveEdit = async (data: ParsedJobData) => {
+    if (!editingApplication) return;
+    
+    try {
+      await updateApplication(editingApplication.id, { data });
+      refreshApplications();
+      setIsEditModalOpen(false);
+      setEditingApplication(null);
+    } catch (error) {
+      console.error('Failed to update application:', error);
+      throw error;
+    }
   };
 
   const handleJobSubmission = async (data: JobSubmissionForm) => {
@@ -110,6 +183,8 @@ export default function NotionTable() {
           setIsDetailModalOpen(false);
           setSelectedAppId(null);
         }}
+        onEdit={handleEditApplication}
+        onDelete={handleDeleteApplication}
       />
       
       <ColumnManagerModal
@@ -124,6 +199,16 @@ export default function NotionTable() {
       <AISettings
         open={isAISettingsModalOpen}
         onClose={() => setIsAISettingsModalOpen(false)}
+      />
+      
+      <EditApplicationModal
+        open={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingApplication(null);
+        }}
+        application={editingApplication}
+        onSave={handleSaveEdit}
       />
     </div>
   );

@@ -8,12 +8,16 @@ interface ApplicationDetailModalProps {
   open: boolean;
   onClose: () => void;
   applicationId: string | null;
+  onEdit?: (application: Application) => void;
+  onDelete?: (application: Application) => void;
 }
 
 export default function ApplicationDetailModal({ 
   open, 
   onClose, 
-  applicationId 
+  applicationId,
+  onEdit,
+  onDelete
 }: ApplicationDetailModalProps) {
   const [application, setApplication] = useState<Application | null>(null);
   const [loading, setLoading] = useState(false);
@@ -76,6 +80,8 @@ export default function ApplicationDetailModal({
         <ApplicationDetailView
           application={application}
           onClose={handleClose}
+          onEdit={onEdit}
+          onDelete={onDelete}
         />
       )}
     </Modal>

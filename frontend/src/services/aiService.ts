@@ -27,6 +27,52 @@ export const aiConfig = {
   }
 };
 
+// Parse job description with Google Gemini
+async function parseWithGemini(jobDescription: string, apiKey: string): Promise<AIParseResult> {
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ 
+              text: `Parse this job posting and extract: company, position, location, salary, job type, requirements. Return as JSON.\n\n${jobDescription}` 
+            }]
+          }]
+        })
+      }
+    );
+    
+    if (!response.ok) {
+      return { success: false, error: 'Gemini API error' };
+    }
+    
+    const data = await response.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    // Parse JSON from response
+    const parsed = JSON.parse(text);
+    
+    return {
+      success: true,
+      data: {
+        companyName: parsed.company,
+        positionTitle: parsed.position,
+        location: parsed.location,
+        salary: parsed.salary,
+        jobType: parsed.job_type,
+        qualifications: parsed.requirements,
+        status: 'APPLIED',
+        confidence: 0.8
+      }
+    };
+  } catch {
+    return { success: false, error: 'Failed to parse with Gemini' };
+  }
+}
+
 // Parse job description with AI
 export async function parseJobWithAI(
   jobDescription: string,
@@ -35,10 +81,14 @@ export async function parseJobWithAI(
   const currentConfig = config ? { ...aiConfig.get(), ...config } : aiConfig.get();
   
   if (!currentConfig.apiKey) {
-    return {
-      success: false,
-      error: 'OpenAI API key is required. Please configure it in settings.'
-    };
+    // Try Gemini free tier first
+    const geminiKey = localStorage.getItem('gemini_api_key');
+    if (geminiKey) {
+      return parseWithGemini(jobDescription, geminiKey);
+    }
+    
+    // Fallback to mock
+    return parseJobWithMock(jobDescription);
   }
 
   try {

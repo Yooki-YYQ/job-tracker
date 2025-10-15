@@ -24,5 +24,9 @@ export const applicationApi = {
 
   delete: async (id: string): Promise<void> => {
     await api.delete(`/api/applications/${id}`);
+  },
+
+  restore: async (id: string): Promise<void> => {
+    await api.post(`/api/applications/${id}/restore`);
   }
 };

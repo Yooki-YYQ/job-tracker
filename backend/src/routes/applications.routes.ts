@@ -5,7 +5,8 @@ import {
   updateApplication,
   getApplications,
   getApplicationById,
-  deleteApplication
+  deleteApplication,
+  restoreApplication
 } from "../controllers/applications.controller";
 import {
   upload,
@@ -28,6 +29,7 @@ router.post("/", createApplication);
 router.put("/:id", updateApplication);
 router.patch("/:id", updateApplication);
 router.delete("/:id", deleteApplication);
+router.post("/:id/restore", restoreApplication);
 
 // File management routes
 router.post("/:applicationId/files", upload.array("files", 5), uploadApplicationFiles);

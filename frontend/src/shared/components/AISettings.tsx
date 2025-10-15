@@ -152,6 +152,19 @@ export default function AISettings({ open, onClose }: AISettingsProps) {
           <Input placeholder="gpt-4" />
         </Form.Item>
 
+        <Form.Item
+          name="geminiApiKey"
+          label="Google Gemini API Key (Free)"
+          help="Get your free API key from https://makersuite.google.com/app/apikey"
+        >
+          <Input.Password
+            placeholder="Enter your Gemini API key for free AI parsing"
+            onChange={(e) => {
+              localStorage.setItem('gemini_api_key', e.target.value);
+            }}
+          />
+        </Form.Item>
+
         <Alert
           message="Getting Your API Key"
           description={
