@@ -63,6 +63,23 @@ export default function NotionTable() {
     setIsDetailModalOpen(false);
   };
 
+  const handleInlineEdit = async (application: Application) => {
+    try {
+      const updated = await updateApplication(application.id, { data: application.data });
+      await refreshApplications();
+      
+      // Update the modal if it's showing this application
+      if (selectedApplication?.id === application.id) {
+        setSelectedApplication(updated);
+      }
+      
+      message.success('Updated successfully');
+    } catch (error) {
+      console.error('Failed to update application:', error);
+      message.error('Failed to update application');
+    }
+  };
+
   const handleDeleteApplication = async (application: Application) => {
     if (window.confirm('Are you sure you want to delete this application?')) {
       try {
@@ -154,6 +171,7 @@ export default function NotionTable() {
         columns={columns}
         loading={loading}
         onRowClick={handleRowClick}
+        onDelete={handleDeleteApplication}
         pagination={pagination}
         onPaginationChange={setPagination}
       />
@@ -183,7 +201,7 @@ export default function NotionTable() {
           setIsDetailModalOpen(false);
           setSelectedAppId(null);
         }}
-        onEdit={handleEditApplication}
+        onEdit={handleInlineEdit}
         onDelete={handleDeleteApplication}
       />
       

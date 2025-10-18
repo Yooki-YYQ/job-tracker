@@ -150,31 +150,131 @@ export async function parseJobWithAI(
   }
 }
 
-// Parse job description with mock data (for testing)
+// Parse job description with smart extraction (no API needed)
 export async function parseJobWithMock(jobDescription: string): Promise<AIParseResult> {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 1000));
 
-  // Mock parsing logic
-  const mockData: ParsedJobData = {
-    companyName: 'Mock Company',
-    positionTitle: 'Software Developer',
+  // Smart extraction logic using regex patterns
+  const extractCompany = (text: string): string => {
+    // Look for company names in various patterns
+    const patterns = [
+      /(?:at|for|with)\s+([A-Z][a-zA-Z\s&]+?)(?:\s|,|\.|$)/i,
+      /([A-Z][a-zA-Z\s&]+?)\s+(?:is looking|seeks|hiring|recruiting)/i,
+      /(?:join|work at)\s+([A-Z][a-zA-Z\s&]+?)(?:\s|,|\.|$)/i,
+      /([A-Z][a-zA-Z\s&]+?)\s+(?:University|College|Inc|Corp|LLC|Ltd)/i
+    ];
+    
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match && match[1]) {
+        const company = match[1].trim();
+        if (company.length > 2 && company.length < 50) {
+          return company;
+        }
+      }
+    }
+    
+    return 'Unknown Company';
+  };
+
+  const extractPosition = (text: string): string => {
+    // Look for position titles in the first few lines
+    const lines = text.split('\n').slice(0, 5);
+    const firstLine = lines[0]?.trim();
+    
+    if (firstLine && firstLine.length > 5 && firstLine.length < 100) {
+      // Clean up common prefixes
+      return firstLine
+        .replace(/^(job|position|role|title):\s*/i, '')
+        .replace(/^(we are looking for|seeking|hiring)\s*/i, '')
+        .trim();
+    }
+    
+    return 'Position Title';
+  };
+
+  const extractLocation = (text: string): string => {
+    const patterns = [
+      /(?:location|based in|office in|work from)\s*:?\s*([^,\n]+)/i,
+      /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*),\s*([A-Z]{2,3})/,
+      /(remote|hybrid|on-site|onsite)/i
+    ];
+    
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match) {
+        return match[1] || match[0];
+      }
+    }
+    
+    return 'Location not specified';
+  };
+
+  const extractSalary = (text: string): string => {
+    const patterns = [
+      /\$[\d,]+(?:k|K)?(?:\s*-\s*\$?[\d,]+(?:k|K)?)?/,
+      /(?:salary|pay|compensation|wage)\s*:?\s*\$?[\d,]+(?:k|K)?(?:\s*-\s*\$?[\d,]+(?:k|K)?)?/i,
+      /[\d,]+(?:k|K)?(?:\s*-\s*[\d,]+(?:k|K)?)?\s*(?:per year|annually|p\.a\.)/i
+    ];
+    
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match) {
+        return match[0];
+      }
+    }
+    
+    return 'Salary not specified';
+  };
+
+  const extractJobType = (text: string): string => {
+    const textLower = text.toLowerCase();
+    if (textLower.includes('full-time') || textLower.includes('full time')) return 'Full-time';
+    if (textLower.includes('part-time') || textLower.includes('part time')) return 'Part-time';
+    if (textLower.includes('contract')) return 'Contract';
+    if (textLower.includes('internship')) return 'Internship';
+    if (textLower.includes('temporary')) return 'Temporary';
+    return 'Full-time';
+  };
+
+  const extractQualifications = (text: string): string => {
+    // Look for requirements/qualifications section
+    const patterns = [
+      /(?:requirements?|qualifications?|skills?|experience)\s*:?\s*([^.\n]+(?:\.[^.\n]+)*)/i,
+      /(?:must have|should have|required)\s*:?\s*([^.\n]+(?:\.[^.\n]+)*)/i
+    ];
+    
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match && match[1]) {
+        return match[1].trim().substring(0, 200);
+      }
+    }
+    
+    return 'See job description for requirements';
+  };
+
+  // Extract data using smart parsing
+  const extractedData: ParsedJobData = {
+    companyName: extractCompany(jobDescription),
+    positionTitle: extractPosition(jobDescription),
     jobUrl: 'https://example.com/job',
     applicationDate: new Date().toISOString(),
     status: 'APPLIED',
-    notes: 'Mock job description parsed',
-    salary: '$80,000 - $100,000',
-    location: 'Remote',
-    jobType: 'Full-time',
-    jobDescription: jobDescription.substring(0, 200) + '...',
-    qualifications: 'Bachelor\'s degree in Computer Science or related field',
-    confidence: 0.9
+    notes: 'Smart parsing (no API key needed)',
+    salary: extractSalary(jobDescription),
+    location: extractLocation(jobDescription),
+    jobType: extractJobType(jobDescription),
+    jobDescription: jobDescription.substring(0, 500) + (jobDescription.length > 500 ? '...' : ''),
+    qualifications: extractQualifications(jobDescription),
+    confidence: 0.7 // Lower confidence since it's pattern-based
   };
 
   return {
     success: true,
-    data: mockData,
-    confidence: 0.9
+    data: extractedData,
+    confidence: 0.7
   };
 }
 

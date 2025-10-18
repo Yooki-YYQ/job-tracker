@@ -44,7 +44,7 @@ export interface TableRowProps {
 // Default column definitions
 export const DEFAULT_COLUMNS: ColumnDefinition[] = [
   { id: 'id', name: 'ID', type: 'text', editable: false, width: 80 },
-  { id: 'data.applicationDate', name: 'Date', type: 'date', editable: true, width: 120 },
+  { id: 'createdAt', name: 'Date', type: 'date', editable: true, width: 120 },
   { id: 'data.positionTitle', name: 'Position', type: 'text', required: true, editable: true, width: 200 },
   { id: 'data.companyName', name: 'Company', type: 'text', required: true, editable: true, width: 150 },
   { id: 'data.status', name: 'Status', type: 'select', editable: true, width: 120, options: ['APPLIED', 'INTERVIEW_SCHEDULED', 'INTERVIEWED', 'OFFER_RECEIVED', 'REJECTED', 'WITHDRAWN', 'ACCEPTED'] },

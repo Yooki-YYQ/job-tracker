@@ -13,12 +13,46 @@ export const applicationApi = {
   },
 
   create: async (data: CreateApplicationDTO): Promise<Application> => {
-    const response = await api.post('/api/applications', data);
-    return response.data;
+    // Check if data contains files
+    if (data.files && data.files.length > 0) {
+      // Use FormData for file uploads
+      const formData = new FormData();
+      formData.append('data', JSON.stringify({
+        companyName: data.data?.companyName,
+        positionTitle: data.data?.positionTitle,
+        jobUrl: data.data?.jobUrl,
+        jobDescription: data.data?.jobDescription,
+        qualifications: data.data?.qualifications,
+        notes: data.data?.notes,
+        salary: data.data?.salary,
+        location: data.data?.location,
+        jobType: data.data?.jobType,
+        status: data.data?.status || 'APPLIED'
+      }));
+      
+      // Add files to FormData
+      data.files.forEach(file => {
+        formData.append('files', file.file);
+      });
+      
+      const response = await api.post('/api/applications', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      return response.data;
+    } else {
+      // No files, use regular JSON
+      const response = await api.post('/api/applications', data);
+      return response.data;
+    }
   },
 
   update: async (id: string, data: UpdateApplicationDTO): Promise<Application> => {
-    const response = await api.put(`/api/applications/${id}`, data);
+    // Send data directly as JSON object (not nested in 'data' property)
+    // Backend expects: { companyName: '...', positionTitle: '...', ... }
+    // NOT: { data: { companyName: '...', ... } }
+    const response = await api.put(`/api/applications/${id}`, data.data || {});
     return response.data;
   },
 

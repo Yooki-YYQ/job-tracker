@@ -9,6 +9,9 @@ export async function getApplications(req: Request, res: Response) {
     let applications = await prisma.application.findMany({
       where: { isDeleted: false }, // Add soft delete filter
       include: {
+        files: {
+          orderBy: { uploadedAt: 'desc' }
+        },
         _count: {
           select: { files: true }
         }
@@ -32,6 +35,9 @@ export async function getApplications(req: Request, res: Response) {
           }
         },
         include: {
+          files: {
+            orderBy: { uploadedAt: 'desc' }
+          },
           _count: { select: { files: true } }
         }
       });
@@ -134,17 +140,55 @@ export async function getApplicationById(req: Request, res: Response) {
 export async function createApplication(req: Request, res: Response) {
   try {
     const { data } = req.body;
+    const files = req.files as Express.Multer.File[];
     
+    console.log("CreateApplication - Files received:", files ? files.length : 0);
+    if (files && files.length > 0) {
+      files.forEach((file, index) => {
+        console.log(`File ${index}:`, {
+          originalname: file.originalname,
+          filename: file.filename,
+          path: file.path,
+          size: file.size,
+          mimetype: file.mimetype
+        });
+      });
+    }
+    
+    // Create the application first
     const application = await prisma.application.create({
       data: {
         data: data || {}
       },
       include: {
+        files: {
+          orderBy: { uploadedAt: 'desc' }
+        },
         _count: {
           select: { files: true }
         }
       }
     });
+    
+    // If files were uploaded, save them to the database
+    if (files && files.length > 0) {
+      const fileRecords = await Promise.all(
+        files.map(file => {
+          console.log("Creating file record for:", file.originalname, "at path:", file.path);
+          return prisma.applicationFile.create({
+            data: {
+              applicationId: application.id,
+              fileName: file.originalname,
+              filePath: `uploads/${file.filename}`
+            }
+          });
+        })
+      );
+      
+      // Update the application response to include the files
+      application.files = fileRecords;
+      application._count.files = fileRecords.length;
+    }
     
     res.status(201).json(application);
   } catch (error) {
@@ -154,9 +198,75 @@ export async function createApplication(req: Request, res: Response) {
 }
 
 export async function updateApplication(req: Request, res: Response) {
+  console.log("🔥🔥🔥 UPDATE APPLICATION FUNCTION CALLED 🔥🔥🔥");
+  console.log("🔥🔥🔥 THIS IS THE UPDATED VERSION 🔥🔥🔥");
+  console.log("🔥🔥🔥 TIMESTAMP: " + new Date().toISOString() + " 🔥🔥🔥");
   try {
+    console.log("=== UPDATE APPLICATION CALLED ===");
+    console.log("Method:", req.method);
+    console.log("URL:", req.url);
+    console.log("Headers:", req.headers);
+    
     const { id } = req.params;
-    const { data } = req.body;
+    const requestBody = req.body;
+    
+    console.log("UpdateApplication - Received request body:", typeof requestBody, JSON.stringify(requestBody, null, 2));
+    console.log("Request body keys:", requestBody ? Object.keys(requestBody) : 'null');
+    console.log("Has 'data' property:", requestBody && 'data' in requestBody);
+    
+    // STRICT VALIDATION: Accept only top-level JSON object, NOT { data: {...} }
+    let updateData: Record<string, any>;
+    
+    // Check if request has nested 'data' property (old format)
+    if (requestBody && typeof requestBody === 'object' && requestBody !== null && 'data' in requestBody) {
+      console.error("REJECTED: Old format with nested 'data' property detected");
+      console.error("Request body keys:", Object.keys(requestBody));
+      console.error("Request body.data:", requestBody.data);
+      return res.status(400).json({ 
+        error: "Invalid request format. Send data directly as JSON object, not nested in 'data' property.",
+        expected: "{ companyName: '...', positionTitle: '...', ... }",
+        received: "{ data: { companyName: '...', ... } }",
+        debug: {
+          requestBodyKeys: Object.keys(requestBody),
+          hasDataProperty: 'data' in requestBody,
+          dataValue: requestBody.data
+        }
+      });
+    }
+    
+    // Additional validation: Check if requestBody is exactly { data: {...} }
+    if (requestBody && typeof requestBody === 'object' && requestBody !== null) {
+      const keys = Object.keys(requestBody);
+      if (keys.length === 1 && keys[0] === 'data') {
+        console.error("REJECTED: Detected { data: {...} } format");
+        return res.status(400).json({ 
+          error: "Invalid request format. Send data directly as JSON object, not nested in 'data' property.",
+          expected: "{ companyName: '...', positionTitle: '...', ... }",
+          received: "{ data: { companyName: '...', ... } }"
+        });
+      }
+    }
+    
+    // Accept direct JSON object
+    if (typeof requestBody === 'object' && requestBody !== null) {
+      updateData = requestBody;
+      console.log("Using requestBody directly as updateData");
+    } else if (typeof requestBody === 'string') {
+      try {
+        updateData = JSON.parse(requestBody);
+        console.log("Parsed JSON string to updateData");
+      } catch (e) {
+        console.error("Failed to parse JSON string:", e);
+        return res.status(400).json({ error: "Invalid JSON format" });
+      }
+    } else {
+      return res.status(400).json({ 
+        error: "Request body must be a JSON object",
+        received: typeof requestBody
+      });
+    }
+    
+    console.log("Final updateData:", JSON.stringify(updateData, null, 2));
     
     // Get current application to merge data
     const currentApplication = await prisma.application.findUnique({
@@ -169,10 +279,44 @@ export async function updateApplication(req: Request, res: Response) {
     
     // Merge new data with existing data
     const existingData = currentApplication.data as Record<string, any> || {};
+    
+    // CRITICAL FIX: Prevent character array bug by ensuring updateData is an object
+    if (typeof updateData === 'string') {
+      console.error("CRITICAL ERROR: updateData is a string, this will cause character array bug!");
+      return res.status(400).json({ 
+        error: "Data must be an object, not a string",
+        received: typeof updateData,
+        value: updateData
+      });
+    }
+    
+    if (typeof updateData !== 'object' || updateData === null) {
+      console.error("CRITICAL ERROR: updateData is not an object!");
+      return res.status(400).json({ 
+        error: "Data must be an object",
+        received: typeof updateData
+      });
+    }
+    
+    // CRITICAL FIX: Clean existing data to remove character array bug
+    const cleanExistingData: Record<string, any> = {};
+    if (existingData && typeof existingData === 'object') {
+      for (const [key, value] of Object.entries(existingData)) {
+        // Skip numeric keys (character array bug indicators)
+        if (!/^\d+$/.test(key)) {
+          cleanExistingData[key] = value;
+        }
+      }
+    }
+    
+    console.log("Clean existing data:", JSON.stringify(cleanExistingData, null, 2));
+    
     const mergedData = {
-      ...existingData,
-      ...data
+      ...cleanExistingData,
+      ...updateData
     };
+    
+    console.log("Merged data:", JSON.stringify(mergedData, null, 2));
     
     const application = await prisma.application.update({
       where: { id },
@@ -180,6 +324,9 @@ export async function updateApplication(req: Request, res: Response) {
         data: mergedData
       },
       include: {
+        files: {
+          orderBy: { uploadedAt: 'desc' }
+        },
         _count: {
           select: { files: true }
         }

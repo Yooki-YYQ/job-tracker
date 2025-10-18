@@ -34,3 +34,6 @@ Write-Host "🌐 Backend API: http://localhost:5000" -ForegroundColor Cyan
 Write-Host "🗄️ Database Admin: http://localhost:8080" -ForegroundColor Cyan
 Write-Host "🎨 Frontend: http://localhost:5173" -ForegroundColor Cyan
 
+
+
+

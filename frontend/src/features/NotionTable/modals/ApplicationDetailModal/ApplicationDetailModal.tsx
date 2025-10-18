@@ -58,7 +58,7 @@ export default function ApplicationDetailModal({
       onCancel={handleClose}
       footer={null}
       width={800}
-      destroyOnHidden
+      destroyOnClose
     >
       {loading && (
         <div style={{ textAlign: 'center', padding: '40px 0' }}>

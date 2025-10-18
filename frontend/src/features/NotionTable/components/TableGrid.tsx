@@ -9,6 +9,7 @@ interface TableGridProps {
   columns: ColumnDefinition[];
   loading: boolean;
   onRowClick?: (record: Application) => void;
+  onDelete?: (record: Application) => void;
   pagination?: { current: number; pageSize: number };
   onPaginationChange?: (pagination: { current: number; pageSize: number }) => void;
 }
@@ -18,6 +19,7 @@ export default function TableGrid({
   columns,
   loading,
   onRowClick,
+  onDelete,
   pagination = { current: 1, pageSize: 10 },
   onPaginationChange
 }: TableGridProps) {
@@ -151,6 +153,22 @@ export default function TableGrid({
         );
       }
       
+      // Handle createdAt date formatting
+      if (col.id === 'createdAt') {
+        const value = record.createdAt;
+        if (!value) return '-';
+        try {
+          const date = new Date(value);
+          return date.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit' 
+          });
+        } catch {
+          return value;
+        }
+      }
+      
       return record[col.id as keyof Application] || '-';
     }
   })),
@@ -165,8 +183,7 @@ export default function TableGrid({
         danger
         onClick={(e) => {
           e.stopPropagation();
-          // TODO: Add delete confirmation and handler
-          console.log('Delete application:', record.id);
+          onDelete?.(record);
         }}
       >
         Delete

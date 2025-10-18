@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import applicationsRouter from "./routes/applications.routes";
+import filesRouter from "./routes/files.routes";
 
 dotenv.config();
 
@@ -15,5 +16,6 @@ app.get("/health", (_req, res) => {
 
 //  Routing
 app.use("/api/applications", applicationsRouter);
+app.use("/api/files", filesRouter);
 
 export default app;

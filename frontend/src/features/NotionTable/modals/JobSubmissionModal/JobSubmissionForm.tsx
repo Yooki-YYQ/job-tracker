@@ -16,11 +16,16 @@ export default function JobSubmissionForm({
   loading = false 
 }: JobSubmissionFormProps) {
   const [form] = Form.useForm<JobSubmissionForm>();
-  const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [cvFile, setCvFile] = useState<UploadFile | null>(null);
+  const [clFile, setClFile] = useState<UploadFile | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  const handleFileChange = ({ fileList: newFileList }: { fileList: UploadFile[] }, fileType?: string) => {
-    setFileList(newFileList);
+  const handleCvFileChange = ({ fileList: newFileList }: { fileList: UploadFile[] }) => {
+    setCvFile(newFileList[0] || null);
+  };
+
+  const handleClFileChange = ({ fileList: newFileList }: { fileList: UploadFile[] }) => {
+    setClFile(newFileList[0] || null);
   };
 
   const beforeUpload = (file: File) => {
@@ -45,13 +50,27 @@ export default function JobSubmissionForm({
   const handleSubmit = async (values: JobSubmissionForm) => {
     // Files are now optional - no validation required
 
-    const uploadedFiles: UploadedFile[] = fileList.map(file => ({
-      id: file.uid,
-      name: file.name,
-      size: file.size || 0,
-      type: file.type || 'application/octet-stream',
-      file: file.originFileObj as File
-    }));
+    const uploadedFiles: UploadedFile[] = [];
+    
+    if (cvFile?.originFileObj) {
+      uploadedFiles.push({
+        id: cvFile.uid,
+        name: cvFile.name,
+        size: cvFile.size || 0,
+        type: cvFile.type || 'application/octet-stream',
+        file: cvFile.originFileObj as File
+      });
+    }
+    
+    if (clFile?.originFileObj) {
+      uploadedFiles.push({
+        id: clFile.uid,
+        name: clFile.name,
+        size: clFile.size || 0,
+        type: clFile.type || 'application/octet-stream',
+        file: clFile.originFileObj as File
+      });
+    }
 
     const formData: JobSubmissionForm = {
       ...values,
@@ -94,9 +113,9 @@ export default function JobSubmissionForm({
 
       <Form.Item label="CV / Resume (Optional)">
         <Upload
-          fileList={fileList.filter(f => f.name?.toLowerCase().includes('cv') || f.name?.toLowerCase().includes('resume'))}
-          onChange={(info) => handleFileChange(info, 'cv')}
-          beforeUpload={() => false}
+          fileList={cvFile ? [cvFile] : []}
+          onChange={handleCvFileChange}
+          beforeUpload={beforeUpload}
           maxCount={1}
           listType="text"
         >
@@ -108,9 +127,9 @@ export default function JobSubmissionForm({
 
       <Form.Item label="Cover Letter (Optional)">
         <Upload
-          fileList={fileList.filter(f => f.name?.toLowerCase().includes('cover'))}
-          onChange={(info) => handleFileChange(info, 'cl')}
-          beforeUpload={() => false}
+          fileList={clFile ? [clFile] : []}
+          onChange={handleClFileChange}
+          beforeUpload={beforeUpload}
           maxCount={1}
           listType="text"
         >
